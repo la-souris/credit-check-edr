@@ -26,9 +26,6 @@
             "LaSouris\\CreditCheck\\Edr\\Tests\\": "tests/"
         }
     },
-    "repositories": [
-        { "type": "path", "url": "../sdk", "options": { "symlink": true } }
-    ],
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
