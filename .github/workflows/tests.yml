@@ -30,12 +30,12 @@ jobs:
       # composer.json wires the SDK in as `../sdk`, so the sibling checkout has
       # to sit next to this one inside the workspace.
       - name: Check out credit-check-edr
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           path: edr
 
       - name: Check out credit-check-sdk
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: la-souris/credit-check-sdk
           ref: main
