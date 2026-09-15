@@ -1,0 +1,65 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  # The SDK is consumed as a path repository resolved from its default branch,
+  # so nothing in this repo changes when it drifts. Re-run weekly to catch that.
+  schedule:
+    - cron: '0 5 * * 1'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: edr
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+
+    steps:
+      # composer.json wires the SDK in as `../sdk`, so the sibling checkout has
+      # to sit next to this one inside the workspace.
+      - name: Check out credit-check-edr
+        uses: actions/checkout@v5
+        with:
+          path: edr
+
+      - name: Check out credit-check-sdk
+        uses: actions/checkout@v5
+        with:
+          repository: la-souris/credit-check-sdk
+          ref: main
+          path: sdk
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: json, mbstring
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-php${{ matrix.php }}-${{ hashFiles('edr/composer.json') }}
+          restore-keys: |
+            composer-php${{ matrix.php }}-
+            composer-
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit
