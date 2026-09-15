@@ -1,0 +1,37 @@
+{
+    "name": "la-souris/credit-check-edr",
+    "description": "EDR (EDR Group) provider implementation of the la-souris/credit-check-sdk contract, plus a low-level client for the EDR Lease credit-check REST API.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "ext-json": "*",
+        "la-souris/credit-check-sdk": "*",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^2.0"
+    },
+    "require-dev": {
+        "guzzlehttp/guzzle": "^7.8",
+        "nyholm/psr7": "^1.8",
+        "phpunit/phpunit": "^11.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LaSouris\\CreditCheck\\Edr\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaSouris\\CreditCheck\\Edr\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        { "type": "path", "url": "../sdk", "options": { "symlink": true } }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "phpunit"
+    }
+}
