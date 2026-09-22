@@ -6,6 +6,8 @@ namespace LaSouris\CreditCheck\Edr\Tests\Functional;
 
 use LaSouris\CreditCheck\Edr\CreditCheck\EdrPayloadMapper;
 use LaSouris\CreditCheck\Edr\Tests\Fake\SampleRequest;
+use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant;
+use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Address;
 use PHPUnit\Framework\TestCase;
 
 final class EdrPayloadMapperTest extends TestCase
@@ -125,6 +127,70 @@ final class EdrPayloadMapperTest extends TestCase
     public function testPayloadEncodesToJsonWithoutNulls(): void
     {
         $json = json_encode($this->payload(), JSON_THROW_ON_ERROR);
+
+        self::assertStringNotContainsString('null', $json);
+    }
+
+    /**
+     * A Person only guarantees initials/firstName/surname; gender, date of birth, contact
+     * information and address are all independently optional. None of that should crash the
+     * mapper, and none of it should be sent as a fabricated default.
+     */
+    public function testOptionalPersonFieldsAreOmittedRatherThanFabricated(): void
+    {
+        $payload = (new EdrPayloadMapper())
+            ->createOrder(SampleRequest::buildFor(new Applicant(SampleRequest::bareMinimumPerson())))
+            ->jsonSerialize();
+        $person = $payload['persons'][0];
+
+        self::assertSame('Jansen', $person['surname']);
+        self::assertSame('K.', $person['initials']);
+        self::assertSame('Kees', $person['firstname']);
+
+        foreach (['mobilenumber', 'email', 'dateofbirth', 'gender', 'address', 'partner'] as $key) {
+            self::assertArrayNotHasKey($key, $person, $key);
+        }
+    }
+
+    public function testPartnerIsOmittedWhenNotProvided(): void
+    {
+        $payload = (new EdrPayloadMapper())
+            ->createOrder(SampleRequest::buildFor(new Applicant(SampleRequest::person())))
+            ->jsonSerialize();
+
+        self::assertArrayNotHasKey('partner', $payload['persons'][0]);
+    }
+
+    public function testOccupantsIsOmittedWhenNotProvided(): void
+    {
+        $person = new \LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Person(
+            initials: 'J.',
+            firstName: 'Jan',
+            surname: 'de Vries',
+            address: new Address(
+                country: 'NL',
+                houseNumber: '12',
+                street: 'Kerkstraat',
+                postalCode: '1011AA',
+                city: 'Amsterdam',
+            ),
+        );
+
+        $payload = (new EdrPayloadMapper())
+            ->createOrder(SampleRequest::buildFor(new Applicant($person)))
+            ->jsonSerialize();
+
+        self::assertArrayNotHasKey('amountOccupants', $payload['persons'][0]['address']);
+    }
+
+    public function testBareMinimumPersonStillEncodesToJsonWithoutNulls(): void
+    {
+        $json = json_encode(
+            (new EdrPayloadMapper())
+                ->createOrder(SampleRequest::buildFor(new Applicant(SampleRequest::bareMinimumPerson())))
+                ->jsonSerialize(),
+            JSON_THROW_ON_ERROR,
+        );
 
         self::assertStringNotContainsString('null', $json);
     }

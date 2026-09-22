@@ -19,7 +19,7 @@ use LaSouris\CreditCheck\Edr\Model\Lease\CreateOrderPersonModel;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Address;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Person;
-use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheck;
+use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheckRequest;
 use LaSouris\CreditCheck\Sdk\Response\ApplicantResult;
 use LaSouris\CreditCheck\Sdk\Response\CheckStatus;
 use LaSouris\CreditCheck\Sdk\Response\Decision;
@@ -42,6 +42,11 @@ use Money\Parser\DecimalMoneyParser;
  * not model — income and affordability figures, marital status, divorce/alimony, AOW status,
  * the yes/no household flags, identification — is simply omitted from the request body. To
  * send any of it, build the wire models yourself and pass them to EdrClient.
+ *
+ * Every field the SDK *does* model beyond `surname`/`initials`/`firstName` is itself optional
+ * on `Person` and `Address` — a caller may not have a date of birth, contact details, gender or
+ * even an address on hand yet. Each is carried through as-is: present data is mapped, absent
+ * data is left out of the body, never sent as a fabricated default.
  */
 final class EdrPayloadMapper
 {
@@ -57,7 +62,7 @@ final class EdrPayloadMapper
         $this->phoneNumbers = PhoneNumberUtil::getInstance();
     }
 
-    public function createOrder(CreateCreditCheck $request): CreateOrderLeaseModel
+    public function createOrder(CreateCreditCheckRequest $request): CreateOrderLeaseModel
     {
         return new CreateOrderLeaseModel(
             $request->reference,
@@ -66,7 +71,7 @@ final class EdrPayloadMapper
         );
     }
 
-    private function metaData(CreateCreditCheck $request): CreateMetaDataLeaseModel
+    private function metaData(CreateCreditCheckRequest $request): CreateMetaDataLeaseModel
     {
         $subject = $request->subject;
 
@@ -92,13 +97,13 @@ final class EdrPayloadMapper
         return new CreateOrderPersonModel(
             surname: $person->surname,
             initials: $person->initials,
-            mobilenumber: $this->phoneNumber($person->contactInformation->mobileNumber),
-            email: $person->contactInformation->email,
-            dateofbirth: $person->dateOfBirth->format('Y-m-d'),
+            mobilenumber: $this->phoneNumber($person->contactInformation?->mobileNumber),
+            email: $person->contactInformation?->email,
+            dateofbirth: $person->dateOfBirth?->format('Y-m-d'),
             gender: Gender::fromSdk($person->gender),
-            address: $this->address($person->address),
+            address: $person->address !== null ? $this->address($person->address) : null,
             firstname: $person->firstName,
-            partner: $this->partner($applicant->partner),
+            partner: $applicant->partner !== null ? $this->partner($applicant->partner) : null,
         );
     }
 
@@ -111,20 +116,21 @@ final class EdrPayloadMapper
         return new CreateOrderPartnerModel(
             surname: $partner->surname,
             initials: $partner->initials,
-            mobilenumber: $this->phoneNumber($partner->contactInformation->mobileNumber),
-            email: $partner->contactInformation->email,
-            dateofbirth: $partner->dateOfBirth->format('Y-m-d'),
+            mobilenumber: $this->phoneNumber($partner->contactInformation?->mobileNumber),
+            email: $partner->contactInformation?->email,
+            dateofbirth: $partner->dateOfBirth?->format('Y-m-d'),
             gender: Gender::fromSdk($partner->gender),
             firstname: $partner->firstName,
         );
     }
 
     /**
-     * EDR takes phone numbers as plain strings; E.164 is the unambiguous rendering.
+     * EDR takes phone numbers as plain strings; E.164 is the unambiguous rendering. Null in,
+     * null out — no contact information means nothing to format.
      */
-    private function phoneNumber(PhoneNumber $number): string
+    private function phoneNumber(?PhoneNumber $number): ?string
     {
-        return $this->phoneNumbers->format($number, PhoneNumberFormat::E164);
+        return $number !== null ? $this->phoneNumbers->format($number, PhoneNumberFormat::E164) : null;
     }
 
     private function address(Address $address): CreateOrderPersonAddressModel

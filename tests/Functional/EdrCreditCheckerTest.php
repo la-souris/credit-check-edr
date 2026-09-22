@@ -12,6 +12,7 @@ use LaSouris\CreditCheck\Edr\Tests\Fake\FakeHttpClient;
 use LaSouris\CreditCheck\Edr\Tests\Fake\FakeTokenProvider;
 use LaSouris\CreditCheck\Edr\Tests\Fake\ResponseFactory;
 use LaSouris\CreditCheck\Edr\Tests\Fake\SampleRequest;
+use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Exception\ProviderValidationException;
 use LaSouris\CreditCheck\Sdk\Provider\Capability;
 use LaSouris\CreditCheck\Sdk\Provider\ProviderCapabilities;
@@ -146,6 +147,19 @@ final class EdrCreditCheckerTest extends TestCase
         $this->expectException(ProviderValidationException::class);
 
         $this->checker->submitCheck(SampleRequest::build());
+    }
+
+    /**
+     * Address is optional on Person, but EDR needs the primary applicant's country to know
+     * whether it can even assess the check — that must fail fast, not with a null-dereference.
+     */
+    public function testRejectsAPrimaryApplicantWithoutAnAddress(): void
+    {
+        $this->expectException(ProviderValidationException::class);
+
+        $this->checker->submitCheck(
+            SampleRequest::buildFor(new Applicant(SampleRequest::bareMinimumPerson())),
+        );
     }
 
     public function testAdvertisesAllCapabilitiesThroughItsAttribute(): void

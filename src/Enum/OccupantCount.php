@@ -16,9 +16,10 @@ enum OccupantCount: string
     case Four = 'Four';
     case MoreAsFour = 'MoreAsFour';
 
-    public static function fromCount(int $occupants): self
+    public static function fromCount(?int $occupants): ?self
     {
         return match (true) {
+            $occupants === null => null,
             $occupants <= 1 => self::One,
             $occupants === 2 => self::Two,
             $occupants === 3 => self::Three,

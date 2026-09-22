@@ -13,7 +13,7 @@ use LaSouris\CreditCheck\Sdk\CreditCheck\Exception\ProviderValidationException;
 use LaSouris\CreditCheck\Sdk\Provider\Capability;
 use LaSouris\CreditCheck\Sdk\Provider\CreditChecker;
 use LaSouris\CreditCheck\Sdk\Provider\Provider;
-use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheck;
+use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheckRequest;
 use LaSouris\CreditCheck\Sdk\Response\ChangedChecksResponse;
 use LaSouris\CreditCheck\Sdk\Response\CheckStatus;
 use LaSouris\CreditCheck\Sdk\Response\CreateCreditCheckResponse;
@@ -46,10 +46,17 @@ final class EdrCreditChecker implements CreditChecker
     ) {
     }
 
-    public function submitCheck(CreateCreditCheck $request): CreateCreditCheckResponse
+    public function submitCheck(CreateCreditCheckRequest $request): CreateCreditCheckResponse
     {
         $this->assertSupportedCurrency($request->subject->amount->getCurrency());
-        $this->assertSupportedCountry($request->primaryApplicant()->person->address->country);
+
+        $address = $request->primaryApplicant()->person->address;
+        if ($address === null) {
+            throw new ProviderValidationException(
+                "EDR requires the primary applicant's address to determine which country to assess.",
+            );
+        }
+        $this->assertSupportedCountry($address->country);
 
         return $this->guard(function () use ($request): CreateCreditCheckResponse {
             $orderId = $this->client->createOrder($this->mapper->createOrder($request));

@@ -22,19 +22,18 @@ use LaSouris\CreditCheck\Edr\Support\Payload;
  *
  * Identical to {@see CreateOrderPersonModel} but without an address or nested partner.
  *
- * Everything after $firstname is detail the SDK does not model — income, affordability figures,
- * marital/divorce status, the household flags, identification. It is optional: supply it when
- * driving the wire models directly, otherwise it is left out of the body.
+ * Only `surname` and `initials` are structurally required — the SDK guarantees those on every
+ * `Person`. Everything else is optional for the same reasons as on {@see CreateOrderPersonModel}.
  */
 final readonly class CreateOrderPartnerModel implements Payload
 {
     public function __construct(
         public string $surname,
         public string $initials,
-        public string $mobilenumber,
-        public string $email,
-        public string $dateofbirth,
-        public Gender $gender,
+        public ?string $mobilenumber = null,
+        public ?string $email = null,
+        public ?string $dateofbirth = null,
+        public ?Gender $gender = null,
         public ?string $firstname = null,
         public ?IncomeSource $sourceofincome = null,
         public ?LivingArrangement $livingArrangement = null,
@@ -75,7 +74,7 @@ final readonly class CreateOrderPartnerModel implements Payload
             'email' => $this->email,
             'dateofbirth' => $this->dateofbirth,
             'birthplace' => $this->birthplace,
-            'gender' => $this->gender->value,
+            'gender' => $this->gender?->value,
             'sourceofincome' => $this->sourceofincome?->value,
             'maritalStatus' => $this->maritalStatus?->value,
             'divorce' => $this->divorce?->value,

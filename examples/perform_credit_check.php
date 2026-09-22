@@ -22,7 +22,7 @@ use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Gender;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Person;
 use LaSouris\CreditCheck\Sdk\CreditCheck\SalesChannel;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Subject;
-use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheck;
+use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheckRequest;
 use libphonenumber\PhoneNumberUtil;
 use Money\Money;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -86,7 +86,7 @@ $partner = new Person(
 
 $applicant = new Applicant($person, $partner);
 
-$request = new CreateCreditCheck(
+$request = new CreateCreditCheckRequest(
     'ORDER-' . date('YmdHis'),
     new Subject(
         label: 'Tesla',

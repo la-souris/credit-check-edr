@@ -20,20 +20,23 @@ use LaSouris\CreditCheck\Edr\Support\Payload;
 /**
  * A person ("persons[]") on POST /api/v1/Lease/Create.
  *
- * Everything after $partner is detail the SDK does not model — income, affordability figures,
- * marital/divorce status, the household flags, identification. It is optional: supply it when
- * driving the wire models directly, otherwise it is left out of the body.
+ * Only `surname` and `initials` are structurally required — the SDK guarantees those on every
+ * `Person`. Everything else the SDK may or may not have been given (contact details, date of
+ * birth, gender, address) is optional here too, and everything the SDK never models at all
+ * (income, affordability figures, marital/divorce status, the household flags, identification)
+ * is optional for the same reason: supply it when driving the wire models directly, otherwise
+ * it is left out of the body rather than sent as `null`.
  */
 final readonly class CreateOrderPersonModel implements Payload
 {
     public function __construct(
         public string $surname,
         public string $initials,
-        public string $mobilenumber,
-        public string $email,
-        public string $dateofbirth,
-        public Gender $gender,
-        public CreateOrderPersonAddressModel $address,
+        public ?string $mobilenumber = null,
+        public ?string $email = null,
+        public ?string $dateofbirth = null,
+        public ?Gender $gender = null,
+        public ?CreateOrderPersonAddressModel $address = null,
         public ?string $firstname = null,
         public ?CreateOrderPartnerModel $partner = null,
         public ?IncomeSource $sourceofincome = null,
@@ -75,7 +78,7 @@ final readonly class CreateOrderPersonModel implements Payload
             'email' => $this->email,
             'dateofbirth' => $this->dateofbirth,
             'birthplace' => $this->birthplace,
-            'gender' => $this->gender->value,
+            'gender' => $this->gender?->value,
             'sourceofincome' => $this->sourceofincome?->value,
             'maritalStatus' => $this->maritalStatus?->value,
             'divorce' => $this->divorce?->value,
@@ -97,7 +100,7 @@ final readonly class CreateOrderPersonModel implements Payload
             'hasCurrentLease' => $this->hasCurrentLease?->value,
             'hasDuoLoan' => $this->hasDuoLoan?->value,
             'aowStatus' => $this->aowStatus?->value,
-            'address' => $this->address->jsonSerialize(),
+            'address' => $this->address?->jsonSerialize(),
             'partner' => $this->partner?->jsonSerialize(),
         ]);
     }

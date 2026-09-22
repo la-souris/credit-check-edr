@@ -12,7 +12,7 @@ use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Gender;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Person;
 use LaSouris\CreditCheck\Sdk\CreditCheck\SalesChannel;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Subject;
-use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheck;
+use LaSouris\CreditCheck\Sdk\Request\CreateCreditCheckRequest;
 use libphonenumber\PhoneNumber;
 use libphonenumber\PhoneNumberUtil;
 use Money\Currencies\ISOCurrencies;
@@ -60,6 +60,19 @@ final class SampleRequest
         );
     }
 
+    /**
+     * A person carrying only what the SDK guarantees — initials, first name, surname — with
+     * everything else (gender, date of birth, contact information, address) left unset.
+     */
+    public static function bareMinimumPerson(): Person
+    {
+        return new Person(
+            initials: 'K.',
+            firstName: 'Kees',
+            surname: 'Jansen',
+        );
+    }
+
     public static function partner(string $houseNumber = '12', string $country = 'NL'): Person
     {
         return new Person(
@@ -73,15 +86,18 @@ final class SampleRequest
         );
     }
 
-    public static function build(string $houseNumber = '12', string $country = 'NL'): CreateCreditCheck
+    public static function build(string $houseNumber = '12', string $country = 'NL'): CreateCreditCheckRequest
     {
-        $applicant = new Applicant(
+        return self::buildFor(new Applicant(
             person: self::person($houseNumber, $country),
             partner: self::partner($houseNumber, $country),
-        );
+        ));
+    }
 
+    public static function buildFor(Applicant $applicant): CreateCreditCheckRequest
+    {
         // $applicants is variadic, so reference, subject and sales channel go positionally.
-        return new CreateCreditCheck(
+        return new CreateCreditCheckRequest(
             'ORDER-123',
             new Subject(
                 label: 'Tesla',
