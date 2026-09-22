@@ -119,7 +119,9 @@ final class PasswordCredentials implements TokenProvider
         $status = $response->getStatusCode();
         $decoded = json_decode((string) $response->getBody(), true);
         $decoded = is_array($decoded) ? $decoded : [];
-        $data = isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : [];
+        // The identity endpoint, unlike the rest of the EDR API, returns the token fields
+        // at the top level instead of wrapped in a "data" envelope.
+        $data = isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : $decoded;
 
         if ($status < 200 || $status >= 300 || !isset($data['jwToken'])) {
             $message = is_string($decoded['message'] ?? null) && $decoded['message'] !== ''

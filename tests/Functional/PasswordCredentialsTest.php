@@ -124,6 +124,30 @@ final class PasswordCredentialsTest extends TestCase
         );
     }
 
+    /**
+     * The identity endpoint returns token fields at the top level, unlike the rest of the
+     * EDR API which wraps everything in a "data" envelope.
+     */
+    public function testLoginAcceptsAnUnwrappedTokenResponse(): void
+    {
+        $this->http->queue(ResponseFactory::json(200, [
+            'id' => '5cfa8bf3-b670-4107-bc7c-a5680cdbb4bd',
+            'tenantid' => 22,
+            'email' => 'api@example.com',
+            'jwToken' => 'jwt-unwrapped',
+            'issuedOn' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'expiresOn' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 3600),
+            'refreshToken' => 'refresh-unwrapped',
+            'refreshTokenExpiresOn' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 86400),
+        ]));
+
+        self::assertSame('jwt-unwrapped', $this->credentials->accessToken());
+
+        $stored = $this->store->get();
+        self::assertNotNull($stored);
+        self::assertSame('refresh-unwrapped', $stored->refreshToken);
+    }
+
     public function testForgetWithAnExpiredRefreshTokenClearsTheStore(): void
     {
         $this->store->put(new AccessToken('cached-jwt', time() + 3600, 'cached-refresh', time() - 10));
