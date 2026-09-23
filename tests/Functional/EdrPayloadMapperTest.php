@@ -108,6 +108,25 @@ final class EdrPayloadMapperTest extends TestCase
         }
     }
 
+    public function testStatusChangeCallbackIsOmittedWhenNoWebhookUrlIsConfigured(): void
+    {
+        $payload = $this->payload();
+
+        self::assertArrayNotHasKey('statusChangeCallback', $payload['metaData']);
+    }
+
+    public function testStatusChangeCallbackIsBuiltFromTheConfiguredWebhookUrl(): void
+    {
+        $payload = (new EdrPayloadMapper('https://app.example.com/webhooks/edr'))
+            ->createOrder(SampleRequest::build())
+            ->jsonSerialize();
+
+        self::assertSame(
+            'https://app.example.com/webhooks/edr?reference=ORDER-123',
+            $payload['metaData']['statusChangeCallback'],
+        );
+    }
+
     public function testPartnerIsNestedInsideThePerson(): void
     {
         $partner = $this->payload()['persons'][0]['partner'];

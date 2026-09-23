@@ -16,6 +16,7 @@ use LaSouris\CreditCheck\Edr\Model\Lease\CreateOrderLeaseModel;
 use LaSouris\CreditCheck\Edr\Model\Lease\CreateOrderPartnerModel;
 use LaSouris\CreditCheck\Edr\Model\Lease\CreateOrderPersonAddressModel;
 use LaSouris\CreditCheck\Edr\Model\Lease\CreateOrderPersonModel;
+use LaSouris\CreditCheck\Edr\Support\WebhookUrl;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Address;
 use LaSouris\CreditCheck\Sdk\CreditCheck\Applicant\Person;
@@ -54,7 +55,11 @@ final class EdrPayloadMapper
     private readonly DecimalMoneyParser $parser;
     private readonly PhoneNumberUtil $phoneNumbers;
 
-    public function __construct()
+    /**
+     * @param ?string $webhookUrl Base URL EDR should call back on order status changes. Left
+     *                            out of the create payload entirely when null.
+     */
+    public function __construct(private readonly ?string $webhookUrl = null)
     {
         $currencies = new ISOCurrencies();
         $this->formatter = new DecimalMoneyFormatter($currencies);
@@ -83,6 +88,9 @@ final class EdrPayloadMapper
             leasePeriodInMonths: $subject->termInMonths,
             carType: $subject->variant,
             orderSalesChannel: SalesChannel::fromSdk($request->salesChannel),
+            statusChangeCallback: $this->webhookUrl !== null
+                ? WebhookUrl::build($this->webhookUrl, $request->reference)
+                : null,
         );
     }
 

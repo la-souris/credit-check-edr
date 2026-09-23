@@ -21,6 +21,7 @@ final readonly class CreateMetaDataLeaseModel implements Payload
         public int $leasePeriodInMonths,
         public ?string $carType = null,
         public ?SalesChannel $orderSalesChannel = null,
+        public ?string $statusChangeCallback = null,
     ) {
     }
 
@@ -34,6 +35,7 @@ final readonly class CreateMetaDataLeaseModel implements Payload
             'leaseAmount' => $this->leaseAmount,
             'leasePeriodInMonths' => $this->leasePeriodInMonths,
             'orderSalesChannel' => $this->orderSalesChannel?->value,
+            'statusChangeCallback' => $this->statusChangeCallback,
         ]);
     }
 }
